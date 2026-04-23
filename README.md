@@ -2,7 +2,7 @@
 
 An end-to-end **Customer Churn Prediction System** built using an Artificial Neural Network (ANN), featuring **class imbalance handling, ROC-AUC optimization, and a Streamlit deployment** for real-time predictions.
 
-[Streamlit App]([https://static.streamlit.io/badges/streamlit_badge.svg)](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/](https://customer-churn-prediction-bxzkw6uapa7svn8bet6dxh.streamlit.app/))
+[![Streamlit App]([https://static.streamlit.io/badges/streamlit_badge.svg)](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/](https://customer-churn-prediction-bxzkw6uapa7svn8bet6dxh.streamlit.app/))
 
 ---
 
