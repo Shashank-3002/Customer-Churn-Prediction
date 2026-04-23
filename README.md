@@ -101,9 +101,13 @@ Customers are categorized into:
 ├── scaler.pkl # Feature scaler
 
 ├── encoder.pkl # ColumnTransformer encoder
+
 ├── label_encoder.pkl # Gender encoder
+
 ├── requirements.txt # Dependencies
+
 ├── runtime.txt # Python version
+
 └── README.md # Documentation
 
 ---
