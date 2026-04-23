@@ -2,74 +2,109 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from keras.models import load_model
-from sklearn. preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 import pickle
 
-##Load the trained ANN model
-model = tf.keras.models.load_model('churn_model.h5')
+# -------------------------------
+# Load model & preprocessing
+# -------------------------------
+model = tf.keras.models.load_model("churn_model.h5")
 
-##Load the scaler used during training
-with open('scaler.pkl', 'rb') as f:
+with open("scaler.pkl", "rb") as f:
     scaler = pickle.load(f)
-##Load the one-hot encoder for the 'Geography' column
-with open('onehot_encoder.pkl', 'rb') as f:
-    geo_encoder = pickle.load(f)
-##Load the label encoder for the 'Gender' column
-with open('label_encoder.pkl', 'rb') as f:
+
+with open("encoder.pkl", "rb") as f:   # ColumnTransformer
+    ct = pickle.load(f)
+
+with open("label_encoder.pkl", "rb") as f:
     label_encoder = pickle.load(f)
 
-## Streamlit app
-st.title("Customer Churn Prediction")
+# -------------------------------
+# Streamlit UI
+# -------------------------------
+st.set_page_config(page_title="Churn Prediction", layout="centered")
 
-##User input fields
-geography = st.selectbox('Geography', geo_encoder.categories_[0])
-gender = st.selectbox('Gender', label_encoder.classes_)
-age = st.slider('Age', 18, 92)
-balance = st.number_input('Balance', min_value=0.0)
-credit_score = st.number_input('Credit Score')
-estimated_salary = st.number_input('Estimated Salary')
-tenure = st.slider('Tenure', 0, 10)
-num_of_products = st.slider('Number of Products', 1, 4)
-has_cr_card = st.selectbox('Has Credit Card', ['No', 'Yes'])
-is_active_member = st.selectbox('Is Active Member', ['No', 'Yes'])
+st.title("💳 Customer Churn Prediction System")
+st.write("Predict whether a customer is likely to churn.")
 
-## Prepare the input data
-input_data = pd.DataFrame({
-    'CreditScore': [credit_score],
-    'Gender':[label_encoder.transform([gender])[0]],
-    'Age':[age],
-    'Tenure':[tenure],
-    'Balance':[balance],
-    'NumOfProducts':[num_of_products],
-    'HasCrCard':[1 if has_cr_card == 'Yes' else 0],
-    'IsActiveMember':[1 if is_active_member == 'Yes' else 0],
-    'EstimatedSalary':[estimated_salary],
-})
+# -------------------------------
+# User Inputs
+# -------------------------------
+geography = st.selectbox("Geography", ["France", "Spain", "Germany"])
+gender = st.selectbox("Gender", ["Male", "Female"])
 
-## One-hot encode the 'Geography' column
-# Use a DataFrame with the same column name as used during encoder fitting to avoid warnings.
-geo_encoded = geo_encoder.transform(pd.DataFrame({'Geography': [geography]})).toarray()
-geo_encoded_df = pd.DataFrame(geo_encoded, columns=geo_encoder.get_feature_names_out(['Geography']))
+age = st.slider("Age", 18, 92, 30)
+tenure = st.slider("Tenure", 0, 10, 3)
 
-## Input dataframe without the 'Geography' column (we already excluded it)
-input_data = pd.concat([input_data.reset_index(drop=True), geo_encoded_df], axis=1)
+balance = st.number_input("Balance", value=50000.0)
+credit_score = st.number_input("Credit Score", value=650)
 
-# Ensure the features are in the same order as used during training
-expected_columns = list(scaler.feature_names_in_)
-for col in expected_columns:
-    if col not in input_data.columns:
-        input_data[col] = 0
-input_data = input_data[expected_columns]
+num_of_products = st.slider("Number of Products", 1, 4, 1)
+has_cr_card = st.selectbox("Has Credit Card", ["Yes", "No"])
+is_active_member = st.selectbox("Is Active Member", ["Yes", "No"])
 
-## Scale the input data using the loaded scaler
-scaled_input = scaler.transform(input_data)
+estimated_salary = st.number_input("Estimated Salary", value=50000.0)
 
-##Make prediction
-prediction = model.predict(scaled_input)
-prediction_probability = prediction[0][0]
+# -------------------------------
+# Prepare Input Data
+# -------------------------------
+input_dict = {
+    "CreditScore": credit_score,
+    "Geography": geography,
+    "Gender": gender,
+    "Age": age,
+    "Tenure": tenure,
+    "Balance": balance,
+    "NumOfProducts": num_of_products,
+    "HasCrCard": 1 if has_cr_card == "Yes" else 0,
+    "IsActiveMember": 1 if is_active_member == "Yes" else 0,
+    "EstimatedSalary": estimated_salary
+}
 
-if prediction_probability > 0.5:
-    st.write(f"The customer is likely to churn with a probability of {prediction_probability:.2f}.")
-else:
-    st.write(f"The customer is unlikely to churn with a probability of {1-prediction_probability:.2f}.")
+input_df = pd.DataFrame([input_dict])
+
+# Encode gender
+input_df["Gender"] = label_encoder.transform(input_df["Gender"])
+
+# Apply ColumnTransformer (handles Geography encoding)
+input_encoded = ct.transform(input_df)
+
+# Scale
+input_scaled = scaler.transform(input_encoded)
+
+# -------------------------------
+# Prediction
+# -------------------------------
+if st.button("Predict Churn"):
+
+    prob = model.predict(input_scaled)[0][0]
+
+    # 🔥 Improved threshold (from your model tuning)
+    threshold = 0.4
+    prediction = 1 if prob > threshold else 0
+
+    st.subheader("📊 Prediction Result")
+
+    st.write(f"**Churn Probability:** {prob:.2f}")
+
+    # -------------------------------
+    # Risk Segmentation (UNIQUE FEATURE)
+    # -------------------------------
+    if prob > 0.7:
+        risk = "🔴 High Risk"
+    elif prob > 0.4:
+        risk = "🟠 Medium Risk"
+    else:
+        risk = "🟢 Low Risk"
+
+    st.write(f"**Risk Level:** {risk}")
+
+    if prediction == 1:
+        st.error("⚠️ Customer is likely to churn")
+    else:
+        st.success("✅ Customer is likely to stay")
+
+# -------------------------------
+# Footer
+# -------------------------------
+st.markdown("---")
+st.caption("Model: ANN with class imbalance handling, ROC optimization & threshold tuning")
