@@ -95,8 +95,11 @@ Customers are categorized into:
 
 ## 📂 Project Structure
 ├── app.py # Streamlit application
+
 ├── churn_model.h5 # Trained ANN model
+
 ├── scaler.pkl # Feature scaler
+
 ├── encoder.pkl # ColumnTransformer encoder
 ├── label_encoder.pkl # Gender encoder
 ├── requirements.txt # Dependencies
