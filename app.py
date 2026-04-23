@@ -3,31 +3,41 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 import pickle
+import os
+
+# Reduce TensorFlow logs
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 # -------------------------------
-# Load model & preprocessing
+# Cache model loading (IMPORTANT)
 # -------------------------------
-model = tf.keras.models.load_model("churn_model.h5")
+@st.cache_resource
+def load_model():
+    return tf.keras.models.load_model("churn_model.h5")
 
-with open("scaler.pkl", "rb") as f:
-    scaler = pickle.load(f)
+@st.cache_resource
+def load_preprocessors():
+    with open("scaler.pkl", "rb") as f:
+        scaler = pickle.load(f)
+    with open("encoder.pkl", "rb") as f:
+        ct = pickle.load(f)
+    with open("label_encoder.pkl", "rb") as f:
+        le = pickle.load(f)
+    return scaler, ct, le
 
-with open("encoder.pkl", "rb") as f:   # ColumnTransformer
-    ct = pickle.load(f)
-
-with open("label_encoder.pkl", "rb") as f:
-    label_encoder = pickle.load(f)
+model = load_model()
+scaler, ct, label_encoder = load_preprocessors()
 
 # -------------------------------
-# Streamlit UI
+# UI
 # -------------------------------
 st.set_page_config(page_title="Churn Prediction", layout="centered")
 
-st.title("💳 Customer Churn Prediction System")
+st.title("💳 Customer Churn Prediction")
 st.write("Predict whether a customer is likely to churn.")
 
 # -------------------------------
-# User Inputs
+# Inputs
 # -------------------------------
 geography = st.selectbox("Geography", ["France", "Spain", "Germany"])
 gender = st.selectbox("Gender", ["Male", "Female"])
@@ -45,7 +55,7 @@ is_active_member = st.selectbox("Is Active Member", ["Yes", "No"])
 estimated_salary = st.number_input("Estimated Salary", value=50000.0)
 
 # -------------------------------
-# Prepare Input Data
+# Prepare input
 # -------------------------------
 input_dict = {
     "CreditScore": credit_score,
@@ -65,7 +75,7 @@ input_df = pd.DataFrame([input_dict])
 # Encode gender
 input_df["Gender"] = label_encoder.transform(input_df["Gender"])
 
-# Apply ColumnTransformer (handles Geography encoding)
+# Apply encoder (ColumnTransformer)
 input_encoded = ct.transform(input_df)
 
 # Scale
@@ -78,7 +88,6 @@ if st.button("Predict Churn"):
 
     prob = model.predict(input_scaled)[0][0]
 
-    # 🔥 Improved threshold (from your model tuning)
     threshold = 0.4
     prediction = 1 if prob > threshold else 0
 
@@ -86,9 +95,7 @@ if st.button("Predict Churn"):
 
     st.write(f"**Churn Probability:** {prob:.2f}")
 
-    # -------------------------------
-    # Risk Segmentation (UNIQUE FEATURE)
-    # -------------------------------
+    # Risk segmentation
     if prob > 0.7:
         risk = "🔴 High Risk"
     elif prob > 0.4:
@@ -107,4 +114,4 @@ if st.button("Predict Churn"):
 # Footer
 # -------------------------------
 st.markdown("---")
-st.caption("Model: ANN with class imbalance handling, ROC optimization & threshold tuning")
+st.caption("ANN Model with class imbalance handling, ROC optimization & threshold tuning")
