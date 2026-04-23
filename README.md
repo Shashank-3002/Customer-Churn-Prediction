@@ -1,39 +1,147 @@
-# 📊 Customer Churn Prediction using ANN
+# 📊 Customer Churn Prediction using Deep Learning (ANN)
 
-An interactive web application that uses an **Artificial Neural Network (ANN)** to predict the likelihood of a customer leaving a bank. 
+An end-to-end **Customer Churn Prediction System** built using an Artificial Neural Network (ANN), featuring **class imbalance handling, ROC-AUC optimization, and a Streamlit deployment** for real-time predictions.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge.svg)](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/)
-
+[![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B?logo=streamlit&logoColor=white)](https://customer-churn-prediction-bxzkw6uapa7svn8bet6dxh.streamlit.app/)
 ---
 
 ## 🔗 Live Demo
-Access the deployed application here: 
-👉 **[ANN Churn Predictor](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/)**
+👉 **[Try the App](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/)**
+
+---
+
+## 🧠 Problem Statement
+Customer churn is a critical issue in the banking sector. Retaining existing customers is significantly more cost-effective than acquiring new ones. This project aims to **predict whether a customer will churn**, enabling proactive retention strategies.
 
 ---
 
 ## 📝 Project Overview
-Customer Churn is a major challenge for service-based industries. This project focuses on building a deep learning model to identify high-risk customers based on features such as credit score, geography, gender, age, tenure, and balance.
+This project uses a **deep learning classification model** to predict churn probability based on customer attributes such as:
 
-### Key Features:
-* **Interactive Dashboard:** Users can adjust customer parameters using sliders and dropdowns.
-* **Deep Learning Inference:** Uses a trained TensorFlow model to calculate churn probability.
-* **Instant Results:** Displays whether a customer is "Likely to Churn" or "Likely to Stay" based on a 50% threshold.
+- Credit Score  
+- Geography  
+- Gender  
+- Age  
+- Tenure  
+- Balance  
+- Number of Products  
+- Activity Status  
+
+---
+
+## ⚙️ Key Features
+
+### 🔹 Deep Learning Model
+- ANN architecture: **128 → 64 → 32 → 1**
+- Activation: ReLU (hidden), Sigmoid (output)
+- Regularization:
+  - Dropout
+  - Batch Normalization
+- Optimizer: Adam
+- Loss Function: Binary Crossentropy
+
+---
+
+### 🔹 Advanced Evaluation Metrics
+- ROC-AUC Score  
+- Precision, Recall, F1-score  
+- Confusion Matrix  
+
+> Focused on **recall optimization** to minimize missed churners.
+
+---
+
+### 🔹 Class Imbalance Handling
+- Implemented **class weights** to ensure churn cases are properly learned.
+
+---
+
+### 🔹 Threshold Tuning (Business-Oriented)
+- Optimized decision threshold (not default 0.5)
+- Improves detection of high-risk customers
+
+---
+
+### 🔹 Risk Segmentation (Unique Feature)
+Customers are categorized into:
+
+- 🔴 High Risk  
+- 🟠 Medium Risk  
+- 🟢 Low Risk  
+
+---
+
+### 🔹 Streamlit Web Application
+- Interactive UI for real-time predictions  
+- Displays:
+  - Churn probability  
+  - Risk level  
+  - Final decision  
 
 ---
 
 ## 🛠️ Tech Stack
-* **Framework:** [Streamlit](https://streamlit.io/)
-* **Deep Learning Library:** [TensorFlow / Keras](https://www.tensorflow.org/)
-* **Data Manipulation:** Pandas & NumPy
-* **Preprocessing:** Scikit-Learn (StandardScaler & LabelEncoder)
+
+- **Frontend:** Streamlit  
+- **Backend / ML:** TensorFlow / Keras  
+- **Data Processing:** Pandas, NumPy  
+- **Preprocessing:** Scikit-learn  
+  - StandardScaler  
+  - LabelEncoder  
+  - ColumnTransformer (OneHot Encoding)
 
 ---
 
 ## 📂 Project Structure
-```text
-├── app.py              # Main Streamlit application
-├── churn_model.h5      # Pre-trained Artificial Neural Network model
-├── requirements.txt    # Python library dependencies
-├── runtime.txt         # Environment configuration (Python 3.11)
-└── README.md           # Project documentation
+├── app.py # Streamlit application
+
+├── churn_model.h5 # Trained ANN model
+
+├── scaler.pkl # Feature scaler
+
+├── encoder.pkl # ColumnTransformer encoder
+
+├── label_encoder.pkl # Gender encoder
+
+├── requirements.txt # Dependencies
+
+├── runtime.txt # Python version
+
+└── README.md # Documentation
+
+---
+
+## 📊 Model Performance
+
+- Strong ROC Curve  
+- Expected ROC-AUC: **~0.85–0.90**  
+- Balanced precision and recall  
+- Improved churn detection using threshold tuning  
+
+---
+
+## 💡 Key Insights
+
+- Customers with **1 product** have higher churn risk  
+- Customers with **2 products** are most stable  
+- Active members are less likely to churn  
+- Geography and balance significantly influence churn behavior  
+
+---
+
+## 🚀 How to Run Locally
+
+```bash
+# Clone the repository
+git clone <your-repo-link>
+
+# Navigate into project folder
+cd customer-churn-project
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the app
+streamlit run app.py
+
+---
