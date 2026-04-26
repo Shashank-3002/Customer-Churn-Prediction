@@ -1,117 +1,148 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import tensorflow as tf
-import pickle
+import joblib
 import os
 
-# Reduce TensorFlow logs
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["PYTHONWARNINGS"] = "ignore"
 
-# -------------------------------
-# Cache model loading (IMPORTANT)
-# -------------------------------
-@st.cache_resource
-def load_model():
-    return tf.keras.models.load_model("churn_model.h5")
+st.set_page_config(
+    page_title="Customer Churn Prediction",
+    page_icon="🏦",
+    layout="centered"
+)
 
 @st.cache_resource
-def load_preprocessors():
-    with open("scaler.pkl", "rb") as f:
-        scaler = pickle.load(f)
-    with open("encoder.pkl", "rb") as f:
-        ct = pickle.load(f)
-    with open("label_encoder.pkl", "rb") as f:
-        le = pickle.load(f)
-    return scaler, ct, le
+def load_files():
+    model = joblib.load("churn_model.pkl")
+    scaler = joblib.load("scaler.pkl")
+    return model, scaler
 
-model = load_model()
-scaler, ct, label_encoder = load_preprocessors()
+model, scaler = load_files()
 
-# -------------------------------
-# UI
-# -------------------------------
-st.set_page_config(page_title="Churn Prediction", layout="centered")
+st.title("🏦 Customer Churn Prediction System")
+st.markdown("### Predict whether a customer is likely to leave the bank")
 
-st.title("💳 Customer Churn Prediction")
-st.write("Predict whether a customer is likely to churn.")
+st.write(
+    "This project uses Machine Learning to predict customer churn "
+    "based on customer profile and banking activity."
+)
 
-# -------------------------------
-# Inputs
-# -------------------------------
-geography = st.selectbox("Geography", ["France", "Spain", "Germany"])
-gender = st.selectbox("Gender", ["Male", "Female"])
+st.divider()
 
-age = st.slider("Age", 18, 92, 30)
-tenure = st.slider("Tenure", 0, 10, 3)
+st.subheader("📋 Enter Customer Details")
 
-balance = st.number_input("Balance", value=50000.0)
-credit_score = st.number_input("Credit Score", value=650)
+col1, col2 = st.columns(2)
 
-num_of_products = st.slider("Number of Products", 1, 4, 1)
-has_cr_card = st.selectbox("Has Credit Card", ["Yes", "No"])
-is_active_member = st.selectbox("Is Active Member", ["Yes", "No"])
+with col1:
+    credit_score = st.number_input(
+        "Credit Score",
+        min_value=300,
+        max_value=900,
+        value=650
+    )
 
-estimated_salary = st.number_input("Estimated Salary", value=50000.0)
+    geography = st.selectbox(
+        "Geography",
+        ["France", "Germany", "Spain"]
+    )
 
-# -------------------------------
-# Prepare input
-# -------------------------------
-input_dict = {
-    "CreditScore": credit_score,
-    "Geography": geography,
-    "Gender": gender,
-    "Age": age,
-    "Tenure": tenure,
-    "Balance": balance,
-    "NumOfProducts": num_of_products,
-    "HasCrCard": 1 if has_cr_card == "Yes" else 0,
-    "IsActiveMember": 1 if is_active_member == "Yes" else 0,
-    "EstimatedSalary": estimated_salary
-}
+    gender = st.selectbox(
+        "Gender",
+        ["Male", "Female"]
+    )
 
-input_df = pd.DataFrame([input_dict])
+    age = st.slider(
+        "Age",
+        18, 92, 35
+    )
 
-# Encode gender
-input_df["Gender"] = label_encoder.transform(input_df["Gender"])
+    tenure = st.slider(
+        "Tenure",
+        0, 10, 5
+    )
 
-# Apply encoder (ColumnTransformer)
-input_encoded = ct.transform(input_df)
+with col2:
+    balance = st.number_input(
+        "Balance",
+        min_value=0.0,
+        value=50000.0
+    )
 
-# Scale
-input_scaled = scaler.transform(input_encoded)
+    num_products = st.slider(
+        "Number of Products",
+        1, 4, 2
+    )
 
-# -------------------------------
-# Prediction
-# -------------------------------
-if st.button("Predict Churn"):
+    has_cr_card = st.selectbox(
+        "Has Credit Card",
+        [0, 1]
+    )
 
-    prob = model.predict(input_scaled)[0][0]
+    is_active_member = st.selectbox(
+        "Is Active Member",
+        [0, 1]
+    )
 
-    threshold = 0.4
-    prediction = 1 if prob > threshold else 0
+    estimated_salary = st.number_input(
+        "Estimated Salary",
+        min_value=0.0,
+        value=50000.0
+    )
 
+st.divider()
+
+gender = 1 if gender == "Male" else 0
+
+geo_germany = 1 if geography == "Germany" else 0
+geo_spain = 1 if geography == "Spain" else 0
+
+if st.button("🔮 Predict Churn", use_container_width=True):
+
+    input_data = np.array([[
+        credit_score,
+        gender,
+        age,
+        tenure,
+        balance,
+        num_products,
+        has_cr_card,
+        is_active_member,
+        estimated_salary,
+        geo_germany,
+        geo_spain
+    ]])
+
+    input_scaled = scaler.transform(input_data)
+
+    prediction = model.predict(input_scaled)
+    probability = model.predict_proba(input_scaled)[0][1]
+
+    st.divider()
     st.subheader("📊 Prediction Result")
 
-    st.write(f"**Churn Probability:** {prob:.2f}")
+    st.metric(
+        label="Churn Probability",
+        value=f"{probability:.2%}"
+    )
 
-    # Risk segmentation
-    if prob > 0.7:
-        risk = "🔴 High Risk"
-    elif prob > 0.4:
-        risk = "🟠 Medium Risk"
+    if probability > 0.70:
+        risk_level = "🔴 High Risk"
+    elif probability > 0.40:
+        risk_level = "🟠 Medium Risk"
     else:
-        risk = "🟢 Low Risk"
+        risk_level = "🟢 Low Risk"
 
-    st.write(f"**Risk Level:** {risk}")
+    st.write(f"### Risk Level: {risk_level}")
 
-    if prediction == 1:
-        st.error("⚠️ Customer is likely to churn")
+    if prediction[0] == 1:
+        st.error("⚠️ Customer is likely to CHURN")
+        st.info("Suggested Action: Offer retention benefits and personalized support.")
     else:
-        st.success("✅ Customer is likely to stay")
+        st.success("✅ Customer is likely to STAY")
+        st.info("Suggested Action: Maintain customer engagement and loyalty.")
 
-# -------------------------------
-# Footer
-# -------------------------------
 st.markdown("---")
-st.caption("ANN Model with class imbalance handling, ROC optimization & threshold tuning")
+st.caption(
+    "Built using Scikit-learn + Streamlit | Random Forest Classifier"
+)
