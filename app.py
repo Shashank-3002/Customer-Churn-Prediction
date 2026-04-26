@@ -161,13 +161,12 @@ hr { border-color: #1a2540; }
 def load_artifacts():
     model     = joblib.load("churn_model.pkl")
     scaler    = joblib.load("scaler.pkl")
-    explainer = joblib.load("shap_explainer.pkl")
     features  = joblib.load("feature_names.pkl")
     threshold = joblib.load("threshold.pkl")
-    return model, scaler, explainer, features, threshold
+    return model, scaler, features, threshold
 
 try:
-    model, scaler, explainer, FEATURES, THRESHOLD = load_artifacts()
+    model, scaler, FEATURES, THRESHOLD = load_artifacts()
 except FileNotFoundError:
     st.error("⚠️  Model files not found. Run `python train_model.py` first.")
     st.stop()
