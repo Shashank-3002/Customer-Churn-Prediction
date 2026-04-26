@@ -1,105 +1,119 @@
+# ============================================================
+#  TRAIN MODEL  —  run this once before launching the app
+#  pip install xgboost shap imbalanced-learn scikit-learn pandas joblib matplotlib
+#  python train_model.py
+# ============================================================
+
 import pandas as pd
 import numpy as np
 import joblib
+import shap
 import matplotlib.pyplot as plt
 
+from xgboost import XGBClassifier
+from imblearn.over_sampling import SMOTE
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix,
-    roc_auc_score
+    accuracy_score, roc_auc_score, f1_score,
+    classification_report, confusion_matrix,
+    precision_recall_curve,
 )
 
-print("Loading Dataset...")
+print("\n" + "="*55)
+print("  CHURN MODEL TRAINING")
+print("="*55)
 
+# ── 1. LOAD ──────────────────────────────────────────────────
 df = pd.read_csv("Churn_Modelling.csv")
-
-print(df.head())
-
-df.drop(
-    ["RowNumber", "CustomerId", "Surname"],
-    axis=1,
-    inplace=True
-)
+df.drop(["RowNumber", "CustomerId", "Surname"], axis=1, inplace=True)
 
 le = LabelEncoder()
 df["Gender"] = le.fit_transform(df["Gender"])
-
-df = pd.get_dummies(
-    df,
-    columns=["Geography"],
-    drop_first=True
-)
+df = pd.get_dummies(df, columns=["Geography"], drop_first=True)
 
 X = df.drop("Exited", axis=1)
 y = df["Exited"]
+FEATURES = list(X.columns)
+print(f"\n  Dataset : {df.shape[0]:,} rows | Churn rate: {y.mean():.1%}")
 
-print("\nFeature Columns:")
-print(X.columns)
-
+# ── 2. SPLIT ─────────────────────────────────────────────────
 X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
+# ── 3. SCALE ─────────────────────────────────────────────────
 scaler = StandardScaler()
+X_train_sc = scaler.fit_transform(X_train)
+X_test_sc  = scaler.transform(X_test)
 
-X_train = scaler.fit_transform(X_train)
-X_test = scaler.transform(X_test)
+# ── 4. SMOTE (fix class imbalance) ───────────────────────────
+X_res, y_res = SMOTE(random_state=42).fit_resample(X_train_sc, y_train)
+print(f"  After SMOTE : {len(X_res):,} training samples (balanced)")
 
-print("\nTraining Model...")
-
-model = RandomForestClassifier(
-    n_estimators=300,
-    max_depth=10,
-    random_state=42
+# ── 5. TRAIN XGBoost ─────────────────────────────────────────
+print("\n  Training XGBoost ...")
+model = XGBClassifier(
+    n_estimators=300, max_depth=6, learning_rate=0.05,
+    subsample=0.8, colsample_bytree=0.8,
+    use_label_encoder=False, eval_metric="auc",
+    random_state=42, verbosity=0,
 )
+model.fit(X_res, y_res, eval_set=[(X_test_sc, y_test)], verbose=False)
 
-model.fit(X_train, y_train)
+# ── 6. TUNE THRESHOLD (maximise F1) ──────────────────────────
+y_prob = model.predict_proba(X_test_sc)[:, 1]
+prec, rec, thr = precision_recall_curve(y_test, y_prob)
+f1s  = 2 * prec * rec / (prec + rec + 1e-9)
+best_thr = float(thr[np.argmax(f1s[:-1])])
+y_pred   = (y_prob >= best_thr).astype(int)
 
-y_pred = model.predict(X_test)
-y_prob = model.predict_proba(X_test)[:, 1]
+# ── 7. RESULTS ───────────────────────────────────────────────
+print("\n" + "="*55)
+print("  EVALUATION")
+print("="*55)
+print(f"  Accuracy  : {accuracy_score(y_test, y_pred):.4f}")
+print(f"  ROC-AUC   : {roc_auc_score(y_test, y_prob):.4f}")
+print(f"  F1 Score  : {f1_score(y_test, y_pred):.4f}")
+print(f"  Threshold : {best_thr:.3f}  (F1-optimal)")
+print(f"\n{classification_report(y_test, y_pred)}")
 
-print("\n========== MODEL EVALUATION ==========\n")
+# ── 8. SHAP ──────────────────────────────────────────────────
+print("  Computing SHAP values ...")
 
-print("Accuracy Score:")
-print(accuracy_score(y_test, y_pred))
+# XGBoost 2.x / SHAP compatibility fix
+model.save_model("_tmp_model.json")
+import xgboost as xgb
+_m = xgb.XGBClassifier(); _m.load_model("_tmp_model.json")
+explainer = shap.TreeExplainer(_m)
 
-print("\nROC-AUC Score:")
-print(roc_auc_score(y_test, y_prob))
+shap_vals = explainer.shap_values(X_test_sc)
 
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred))
-
-print("\nConfusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
-
-feature_importance = pd.Series(
-    model.feature_importances_,
-    index=X.columns
-).sort_values(ascending=False)
-
-print("\nTop Feature Importance:")
-print(feature_importance)
-
-# Optional Visualization
-plt.figure(figsize=(10, 6))
-feature_importance.head(10).plot(kind="barh")
-plt.title("Top Features Affecting Churn")
-plt.xlabel("Importance Score")
+plt.figure(figsize=(9, 5))
+shap.summary_plot(shap_vals, X_test_sc, feature_names=FEATURES,
+                  plot_type="bar", show=False)
+plt.title("Feature Importance (SHAP)", fontsize=12)
 plt.tight_layout()
-plt.show()
+plt.savefig("shap_importance.png", dpi=150)
+plt.close()
+print("  SHAP plot saved → shap_importance.png")
 
-print("\nSaving Model Files...")
+# ── 9. SAVE ──────────────────────────────────────────────────
+joblib.dump(model,     "churn_model.pkl")
+joblib.dump(scaler,    "scaler.pkl")
+joblib.dump(explainer, "shap_explainer.pkl")
+joblib.dump(FEATURES,  "feature_names.pkl")
+joblib.dump(best_thr,  "threshold.pkl")
 
-joblib.dump(model, "churn_model.pkl")
-joblib.dump(scaler, "scaler.pkl")
+import os; os.remove("_tmp_model.json")
 
-print("\nModel + Scaler Saved Successfully!")
-print("Ready for Streamlit Deployment 🚀")
+print("\n" + "="*55)
+print("  FILES SAVED")
+print("="*55)
+print("  churn_model.pkl")
+print("  scaler.pkl")
+print("  shap_explainer.pkl")
+print("  feature_names.pkl")
+print("  threshold.pkl")
+print("\n  ✅  Run:  streamlit run app.py")
+print("="*55 + "\n")
