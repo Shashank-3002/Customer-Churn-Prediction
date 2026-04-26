@@ -1,147 +1,125 @@
-# 📊 Customer Churn Prediction using Deep Learning (ANN)
+# 📊 Customer Churn Intelligence using Machine Learning
 
-An end-to-end **Customer Churn Prediction System** built using an Artificial Neural Network (ANN), featuring **class imbalance handling, ROC-AUC optimization, and a Streamlit deployment** for real-time predictions.
+An end-to-end **AI-Powered Customer Churn Prediction & Retention Intelligence System** built using **XGBoost + SMOTE + SHAP Explainability + Streamlit Dashboard**, designed to help businesses identify high-risk customers and take proactive retention actions.
 
 [![Streamlit App](https://img.shields.io/badge/Streamlit-Live%20App-FF4B4B?logo=streamlit&logoColor=white)](https://customer-churn-prediction-naultpgvcxvfrr9yv3utvc.streamlit.app/)
----
-
-## 🔗 Live Demo
-👉 **[Try the App](https://ann-project-implementation-4rrbmvvkbdqkmfkukxthsd.streamlit.app/)**
 
 ---
 
 ## 🧠 Problem Statement
-Customer churn is a critical issue in the banking sector. Retaining existing customers is significantly more cost-effective than acquiring new ones. This project aims to **predict whether a customer will churn**, enabling proactive retention strategies.
+
+Customer churn is one of the biggest business challenges in the banking and financial sector. Retaining an existing customer is significantly more cost-effective than acquiring a new one.
+
+This project aims to build an **intelligent churn prediction system** that can:
+
+- Predict whether a customer is likely to churn
+- Calculate churn probability
+- Classify customer risk level
+- Suggest retention strategies
+- Support both single customer prediction and bulk customer analysis
+
+This helps businesses take **proactive customer retention decisions** instead of reactive ones.
 
 ---
 
 ## 📝 Project Overview
-This project uses a **deep learning classification model** to predict churn probability based on customer attributes such as:
 
-- Credit Score  
-- Geography  
-- Gender  
-- Age  
-- Tenure  
-- Balance  
-- Number of Products  
-- Activity Status  
+This project uses an advanced **Machine Learning Classification Model (XGBoost)** trained on customer banking data to predict churn probability based on features such as:
+
+- Credit Score
+- Geography
+- Gender
+- Age
+- Tenure
+- Account Balance
+- Number of Products
+- Credit Card Status
+- Active Membership Status
+- Estimated Salary
+
+The project goes beyond basic prediction by adding:
+
+- Business-oriented threshold optimization
+- Retention strategy recommendations
+- Bulk customer risk analysis
+- Interactive executive dashboard
 
 ---
 
 ## ⚙️ Key Features
 
-### 🔹 Deep Learning Model
-- ANN architecture: **128 → 64 → 32 → 1**
-- Activation: ReLU (hidden), Sigmoid (output)
-- Regularization:
-  - Dropout
-  - Batch Normalization
-- Optimizer: Adam
-- Loss Function: Binary Crossentropy
+---
+
+## 🔹 Machine Learning Model
+
+### XGBoost Classifier
+
+Used a highly optimized gradient boosting model for superior prediction performance.
+
+### Why XGBoost?
+
+- Better than traditional ANN for tabular banking data
+- Handles non-linearity effectively
+- Stronger performance on imbalanced datasets
+- Faster inference for deployment
+- Production-friendly and scalable
 
 ---
 
-### 🔹 Advanced Evaluation Metrics
-- ROC-AUC Score  
-- Precision, Recall, F1-score  
-- Confusion Matrix  
+## 🔹 Class Imbalance Handling
 
-> Focused on **recall optimization** to minimize missed churners.
+### SMOTE (Synthetic Minority Oversampling Technique)
 
----
+Customer churn datasets are naturally imbalanced.
 
-### 🔹 Class Imbalance Handling
-- Implemented **class weights** to ensure churn cases are properly learned.
+To solve this:
 
----
+- Applied **SMOTE**
+- Balanced churn vs non-churn classes
+- Improved recall for churn prediction
 
-### 🔹 Threshold Tuning (Business-Oriented)
-- Optimized decision threshold (not default 0.5)
-- Improves detection of high-risk customers
+This helps reduce false negatives (missing actual churners).
 
 ---
 
-### 🔹 Risk Segmentation (Unique Feature)
-Customers are categorized into:
+## 🔹 Repository Structure
 
-- 🔴 High Risk  
-- 🟠 Medium Risk  
-- 🟢 Low Risk  
+├── app.py                     # Streamlit dashboard
 
----
+├── train_model.py             # Model training pipeline
 
-### 🔹 Streamlit Web Application
-- Interactive UI for real-time predictions  
-- Displays:
-  - Churn probability  
-  - Risk level  
-  - Final decision  
+├── Churn_Modelling.csv        # Dataset
 
----
+├── churn_model.pkl            # Trained XGBoost model
 
-## 🛠️ Tech Stack
+├── scaler.pkl                 # StandardScaler
 
-- **Frontend:** Streamlit  
-- **Backend / ML:** TensorFlow / Keras  
-- **Data Processing:** Pandas, NumPy  
-- **Preprocessing:** Scikit-learn  
-  - StandardScaler  
-  - LabelEncoder  
-  - ColumnTransformer (OneHot Encoding)
+├── feature_names.pkl          # Feature names
 
----
+├── threshold.pkl              # Optimized prediction threshold
 
-## 📂 Project Structure
-├── app.py # Streamlit application
+├── shap_importance.png        # SHAP feature importance plot
 
-├── churn_model.h5 # Trained ANN model
+├── requirements.txt           # Dependencies
 
-├── scaler.pkl # Feature scaler
+├── runtime.txt                # Python version
 
-├── encoder.pkl # ColumnTransformer encoder
+└── README.md                  # Documentation
 
-├── label_encoder.pkl # Gender encoder
-
-├── requirements.txt # Dependencies
-
-├── runtime.txt # Python version
-
-└── README.md # Documentation
-
----
-
-## 📊 Model Performance
-
-- Strong ROC Curve  
-- Expected ROC-AUC: **~0.85–0.90**  
-- Balanced precision and recall  
-- Improved churn detection using threshold tuning  
-
----
-
-## 💡 Key Insights
-
-- Customers with **1 product** have higher churn risk  
-- Customers with **2 products** are most stable  
-- Active members are less likely to churn  
-- Geography and balance significantly influence churn behavior  
-
----
+--- 
 
 ## 🚀 How to Run Locally
-
-```bash
-# Clone the repository
+bash
+### Clone the repository
 git clone <your-repo-link>
 
-# Navigate into project folder
+### Navigate into project folder
 cd customer-churn-project
 
-# Install dependencies
+### Install dependencies
 pip install -r requirements.txt
 
-# Run the app
+### Run the app
 streamlit run app.py
 
 ---
