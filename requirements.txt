@@ -1,6 +1,9 @@
+xgboost
+imbalanced-learn
 streamlit
 pandas
 numpy
 scikit-learn
 joblib
 matplotlib
+shap
