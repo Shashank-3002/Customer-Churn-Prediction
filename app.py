@@ -18,7 +18,6 @@ matplotlib.use("Agg")
 
 st.set_page_config(
     page_title="Customer Churn Intelligence",
-    page_icon="📊",
     layout="wide"
 )
 
@@ -214,7 +213,7 @@ predict_button = st.sidebar.button("Predict Churn")
 # MAIN PAGE
 # ------------------------------------------------------------
 
-st.title("📊 Customer Churn Intelligence Dashboard")
+st.title("Customer Churn Intelligence Dashboard")
 st.write("XGBoost + SMOTE + Threshold Optimization + Streamlit Cloud Safe Version")
 
 tab1, tab2 = st.tabs([
